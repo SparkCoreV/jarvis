@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JARVIS - Virtual Assistant</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+      color: white;
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .jarvis-container {
+      text-align: center;
+      padding: 40px;
+      border-radius: 15px;
+      background: rgba(0, 0, 0, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      width: 350px;
+      transition: transform 0.3s ease;
+    }
+
+    .jarvis-container:hover {
+      transform: scale(1.05);
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fdbb2d;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    .output {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+      height: 120px;
+      overflow-y: auto;
+      font-size: 18px;
+      text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      background: #fdbb2d;
+      color: white;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    button:hover {
+      background: #ff6600;
+      transform: translateY(-3px);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* Animations for text */
+    .fadeIn {
+      animation: fadeIn 1.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* Button container hover effects */
+    .buttons button:active {
+      transform: translateY(2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="jarvis-container">
+    <h1 class="fadeIn">JARVIS - Your Virtual Assistant</h1>
+    <div class="output" id="output">Hello! Activate me by clicking "Speak".</div>
+    <div class="buttons">
+      <button onclick="startListening()">Speak</button>
+      <button onclick="stopListening()">Stop</button>
+    </div>
+  </div>
+
+  <script>
+    const outputDiv = document.getElementById('output');
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onresult = async (event) => {
+      const userInput = event.results[0][0].transcript.toLowerCase();
+      outputDiv.textContent = `You said: "${userInput}"`;
+      const response = await processInput(userInput);
+      speakResponse(response);
+    };
+
+    recognition.onend = () => {
+      outputDiv.textContent = "Speech recognition stopped.";
+    };
+
+    function startListening() {
+      outputDiv.textContent = "Listening...";
+      recognition.start();
+    }
+
+    function stopListening() {
+      recognition.stop();
+      outputDiv.textContent = "Stopped listening.";
+    }
+
+    async function processInput(input) {
+      if (input.includes('hello')) {
+        return "Hello! How can I assist you today?";
+      } else if (input.includes('weather')) {
+        return await getWeather('London');
+      } else if (input.includes('time')) {
+        const now = new Date();
+        return `The current time is ${now.getHours()}:${now.getMinutes()}.`;
+      } else if (input.includes('your name')) {
+        return "I am JARVIS, your virtual assistant.";
+      } else {
+        return await askGPT(input);
+      }
+    }
+
+    async function getWeather(city) {
+      const apiKey = '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'; // Replace with your OpenWeather API key
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return `The weather in ${city} is ${data.weather[0].description} with a temperature of ${data.main.temp}°C.`;
+      } catch (error) {
+        return "I'm sorry, I couldn't fetch the weather right now.";
+      }
+    }
+
+    async function askGPT(input) {
+      const apiKey = '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'; // Replace with your OpenAI API key
+      const apiUrl = 'https://api.openai.com/v1/completions';
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'text-davinci-003',
+            prompt: `User said: "${input}". Provide a helpful and concise response.`,
+            max_tokens: 150,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.choices && data.choices.length > 0) {
+          return data.choices[0].text.trim();
+        } else {
+          return "I'm sorry, I couldn't understand your request.";
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        return "I'm having trouble processing that request right now.";
+      }
+    }
+
+    function speakResponse(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+      outputDiv.textContent = text;
+    }
+  </script>
+</body>
+</html>
